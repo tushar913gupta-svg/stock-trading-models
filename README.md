@@ -1,3 +1,4 @@
+#Stock Trading Models
 Run the main.py file to see how the models will be used in a website setting.
 Refer the buy_or_sell.ipnyb file in case you want to see my approach or you want to train a model on another set of stocks.
 Run the test.py file if you want to see how the model performs in the past year.
