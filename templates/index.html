@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head>
+  <title>Trading Agent</title>
+</head>
+<body>
+  <h2>Daily Trading Signal</h2>
+
+  <form method="post">
+    <label>User ID</label><br>
+    <input name="user_id" required><br><br>
+
+    <label>Ticker</label><br>
+    <input name="ticker" required><br><br>
+
+    <label>Initial Balance (first time only)</label><br>
+    <input name="initial_balance"><br><br>
+
+    <button type="submit">Get Signal</button>
+  </form>
+
+  {% if result %}
+    <hr>
+    <p><b>Action:</b> {{ result.action }}</p>
+    <p><b>Balance:</b> {{ result.balance }}</p>
+    <p><b>Inventory Units:</b> {{ result.units }}</p>
+  {% endif %}
+</body>
+</html>

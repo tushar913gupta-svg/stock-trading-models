@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<h3 class="mb-3">Your Portfolios</h3>
+
+<div class="row">
+  {% for p in portfolios %}
+  <div class="col-md-4">
+    <div class="card mb-3 shadow-sm">
+      <div class="card-body">
+        <h5>{{ p.ticker }}</h5>
+        <p class="mb-1">Balance: <b>{{ p.balance }}</b></p>
+
+        <a href="/trade/{{ p.ticker }}" class="btn btn-primary btn-sm">Run Model</a>
+
+        <form method="post" action="/balance/{{ p.id }}" class="mt-2">
+          <div class="input-group input-group-sm">
+            <input name="amount" class="form-control" placeholder="+ / - amount">
+            <button class="btn btn-outline-secondary">Update</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<hr>
+
+<h5>Create New Portfolio</h5>
+<form method="post" action="/portfolio" class="row g-2">
+  <div class="col-md-3">
+    <input name="ticker" class="form-control" placeholder="Ticker">
+  </div>
+  <div class="col-md-3">
+    <input name="balance" class="form-control" placeholder="Initial Balance">
+  </div>
+  <div class="col-md-2">
+    <button class="btn btn-success w-100">Add</button>
+  </div>
+</form>
+{% endblock %}
