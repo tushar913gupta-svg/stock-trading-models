@@ -7,11 +7,11 @@ import numpy as np
 import tensorflow as tf
 
 def fetch_data(ticker):
-    path = f'./Stock Data/{ticker}.csv'
+    path = f'./Stock Data/{ticker}TEST.csv'
     if not os.path.exists(path):
-        df = yf.download(f'{ticker}', start='2022-01-01', end='2025-01-01')
+        df = yf.download(ticker, start='2025-01-01', end='2026-01-01')
         df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
-        df.to_csv(f'./Stock Data/{ticker}.csv')
+        df.to_csv(f'./Stock Data/{ticker}TEST.csv')
     else:
         df = pd.read_csv(path)
 
@@ -33,19 +33,33 @@ def fetch_data(ticker):
     df.dropna(inplace=True)
 
     eps = 1e-9
-    df['Close_Norm'] = (df['Close'] - df['Close'].mean()) / (df['Close'].std() + eps)
-    df['SMA_5_Norm'] = (df['SMA_5'] - df['SMA_5'].mean()) / (df['SMA_5'].std() + eps)
-    df['RSI_Norm'] = (df['RSI'] - df['RSI'].mean()) / (df['RSI'].std() + eps)
-    df['MACD_Norm'] = (df['MACD'] - df['MACD'].mean()) / (df['MACD'].std() + eps)
+
+    df['Close_Mean'] = df['Close'].rolling(60).mean()
+    df['Close_Std'] = df['Close'].rolling(60).std()
+    df['Close_Norm'] = (df['Close'] - df['Close_Mean']) / (df['Close_Std'] + eps)
+
+    df['SMA_5_Mean'] = df['SMA_5'].rolling(60).mean()
+    df['SMA_5_Std'] = df['SMA_5'].rolling(60).std()
+    df['SMA_5_Norm'] = (df['SMA_5'] - df['SMA_5_Mean']) / (df['SMA_5_Std'] + eps)
+
+    df['RSI_Mean'] = df['RSI'].rolling(60).mean()
+    df['RSI_Std'] = df['RSI'].rolling(60).std()
+    df['RSI_Norm'] = (df['RSI'] - df['RSI_Mean']) / (df['RSI_Std'] + eps)
+
+    df['MACD_Mean'] = df['MACD'].rolling(60).mean()
+    df['MACD_Std'] = df['MACD'].rolling(60).std()
+    df['MACD_Norm'] = (df['MACD'] - df['MACD_Mean']) / (df['MACD_Std'] + eps)
+
+    df.dropna(inplace=True)
 
     return df.reset_index(drop=True)
 
 class TradingEnv:
-    def __init__(self, df, initial_balance=10000, window=200, max_units=1000):
+    def __init__(self, df, initial_balance=1000000, window=200, max_units=1000):
         self.df = df.reset_index(drop=True)
         self.initial_balance = float(initial_balance)
         self.window = int(window)
-        self.max_units = int(max_units)
+        self.max_units = int(max_units)*(initial_balance/10000)
         self.states = ['Close_Norm', 'SMA_5_Norm', 'RSI_Norm', 'MACD_Norm']
         self.reset()
         self.state_size = len(self.get_state())
@@ -207,7 +221,4 @@ while True:
 
     ticker = input("Enter the stock: ").upper()
     actor = tf.keras.models.load_model(f"models/{model}.keras") #replace with whichever model you want to test
-    test(f"{ticker}TEST", actor) #replace the tickers accordingly (<ticker>TEST is ytd data)
-
-
-
+    test(ticker, actor) #replace the tickers accordingly (<ticker>TEST is ytd data)
