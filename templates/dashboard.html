@@ -1,41 +1,141 @@
 {% extends "base.html" %}
 {% block content %}
-<h3 class="mb-3">Your Portfolios</h3>
 
-<div class="row">
-  {% for p in portfolios %}
-  <div class="col-md-4">
-    <div class="card mb-3 shadow-sm">
-      <div class="card-body">
-        <h5>{{ p.ticker }}</h5>
-        <p class="mb-1">Balance: <b>{{ p.balance }}</b></p>
-
-        <a href="/trade/{{ p.ticker }}" class="btn btn-primary btn-sm">Run Model</a>
-
-        <form method="post" action="/balance/{{ p.id }}" class="mt-2">
-          <div class="input-group input-group-sm">
-            <input name="amount" class="form-control" placeholder="+ / - amount">
-            <button class="btn btn-outline-secondary">Update</button>
-          </div>
-        </form>
-      </div>
+<!-- KPI row -->
+<div class="row g-3 mb-5">
+    <div class="col-6 col-md-3">
+        <div class="card bg-black border-secondary p-3 h-100">
+            <p class="qt-eyebrow text-secondary mb-1">Net Worth</p>
+            <h4 class="font-mono text-success mb-0">${{ "{:,.2f}".format(net_worth) }}</h4>
+        </div>
     </div>
-  </div>
-  {% endfor %}
+    <div class="col-6 col-md-3">
+        <div class="card bg-black border-secondary p-3 h-100">
+            <p class="qt-eyebrow text-secondary mb-1">Portfolios</p>
+            <h4 class="font-mono mb-0">{{ portfolios|length }}</h4>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card bg-black border-secondary p-3 h-100">
+            <p class="qt-eyebrow text-secondary mb-1">Monthly Spend</p>
+            <h4 class="font-mono {% if budget and month_expenses > budget.limit_amount %}text-danger{% else %}text-warning{% endif %} mb-0">
+                ${{ "{:,.2f}".format(month_expenses) }}
+            </h4>
+            {% if budget %}
+            <p class="text-secondary small mb-0">of ${{ "{:,.0f}".format(budget.limit_amount) }} budget</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card bg-black border-secondary p-3 h-100">
+            <p class="qt-eyebrow text-secondary mb-1">Goals</p>
+            <h4 class="font-mono mb-0">{{ goals|length }}</h4>
+        </div>
+    </div>
 </div>
 
-<hr>
+<div class="row g-5">
 
-<h5>Create New Portfolio</h5>
-<form method="post" action="/portfolio" class="row g-2">
-  <div class="col-md-3">
-    <input name="ticker" class="form-control" placeholder="Ticker">
-  </div>
-  <div class="col-md-3">
-    <input name="balance" class="form-control" placeholder="Initial Balance">
-  </div>
-  <div class="col-md-2">
-    <button class="btn btn-success w-100">Add</button>
-  </div>
-</form>
+    <!-- Create portfolio -->
+    <div class="col-lg-4">
+        <p class="qt-eyebrow text-secondary mb-1">New Position</p>
+        <h2 class="fw-semibold mb-4">Create Portfolio</h2>
+
+        <div class="card bg-black border-secondary p-4 rounded-3">
+            <form method="POST" action="/portfolio">
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Ticker Symbol</label>
+                    <input type="text" name="ticker" class="form-control bg-dark text-light border-secondary" placeholder="e.g. AAPL" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Portfolio Type</label>
+                    <select name="type" class="form-select bg-dark text-light border-secondary">
+                        <option value="equity">Equity</option>
+                        <option value="crypto">Crypto</option>
+                        <option value="etf">ETF</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label text-secondary small">Initial Capital (USD)</label>
+                    <input type="number" name="balance" class="form-control bg-dark text-light border-secondary" placeholder="10000" min="1" step="0.01" required>
+                </div>
+                <button class="btn btn-primary w-100">Analyze Stock →</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Active portfolios -->
+    <div class="col-lg-8">
+        <p class="qt-eyebrow text-secondary mb-1">Positions</p>
+        <h2 class="fw-semibold mb-4">Active Portfolios</h2>
+
+        {% if portfolios %}
+        <table class="table table-dark table-hover align-middle mb-5">
+            <thead class="border-secondary">
+                <tr class="text-secondary">
+                    <th class="qt-eyebrow fw-normal border-secondary">Name</th>
+                    <th class="qt-eyebrow fw-normal border-secondary">Type</th>
+                    <th class="qt-eyebrow fw-normal border-secondary">Cash</th>
+                    <th class="qt-eyebrow fw-normal border-secondary text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody class="border-secondary">
+                {% for p in portfolios %}
+                <tr class="border-secondary">
+                    <td class="font-mono fw-bold">{{ p.name }}</td>
+                    <td><span class="badge bg-secondary">{{ p.type or "equity" }}</span></td>
+                    <td class="font-mono text-success">${{ "{:,.2f}".format(p.balance) }}</td>
+                    <td class="text-end">
+                        <div class="d-flex gap-2 justify-content-end">
+                            {% set sym = p.name.split(' ')[0] %}
+                            <a href="/trade/{{ sym }}" class="btn btn-sm btn-success">Trade</a>
+                            <form method="POST" action="/portfolio" style="display:inline;">
+                                <input type="hidden" name="ticker"  value="{{ sym }}">
+                                <input type="hidden" name="balance" value="{{ p.balance }}">
+                                <input type="hidden" name="show"    value="false">
+                                <button class="btn btn-sm btn-primary">Analyze</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-secondary small mt-2 mb-5">No portfolios yet — create your first position above.</p>
+        {% endif %}
+
+        <!-- Recent transactions -->
+        {% if recent_tx %}
+        <p class="qt-eyebrow text-secondary mb-1">Activity</p>
+        <h5 class="fw-semibold mb-3">Recent Transactions</h5>
+        <table class="table table-dark table-sm align-middle">
+            <thead>
+                <tr class="text-secondary">
+                    <th class="qt-eyebrow fw-normal border-secondary">Date</th>
+                    <th class="qt-eyebrow fw-normal border-secondary">Asset</th>
+                    <th class="qt-eyebrow fw-normal border-secondary">Type</th>
+                    <th class="qt-eyebrow fw-normal border-secondary text-end">Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in recent_tx %}
+                <tr class="border-secondary">
+                    <td class="text-secondary small">{{ tx.date.strftime("%b %d, %Y") }}</td>
+                    <td class="font-mono">{{ tx.asset.symbol }}</td>
+                    <td>
+                        <span class="badge {% if tx.type == 'buy' %}bg-success{% else %}bg-danger{% endif %}">
+                            {{ tx.type.upper() }}
+                        </span>
+                    </td>
+                    <td class="font-mono text-end">${{ "{:,.2f}".format(tx.amount) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+</div>
+
 {% endblock %}

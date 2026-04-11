@@ -1,20 +1,34 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-4">
-    <div class="card shadow">
-      <div class="card-body">
-        <h4 class="mb-3 text-center">Login</h4>
-        <form method="post">
-          <input class="form-control mb-2" name="username" placeholder="Username">
-          <input class="form-control mb-3" type="password" name="password" placeholder="Password">
-          <button class="btn btn-primary w-100">Login</button>
-        </form>
-        <div class="text-center mt-2">
-          <a href="/signup">Create account</a>
+
+<div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="col-md-5 col-lg-4">
+
+        <div class="text-center mb-4">
+            <p class="qt-eyebrow text-secondary mb-1">RedSun</p>
+            <h2 class="fw-semibold mb-1">Welcome back</h2>
+            <p class="text-secondary small">Sign in to your trading dashboard</p>
         </div>
-      </div>
+
+        <div class="card bg-black border-secondary rounded-3 p-4">
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Email</label>
+                    <input type="email" name="email" class="form-control bg-dark text-light border-secondary" placeholder="you@example.com" required>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label text-secondary small">Password</label>
+                    <input type="password" name="password" class="form-control bg-dark text-light border-secondary" placeholder="••••••••" required>
+                </div>
+                <button class="btn btn-primary w-100">Login</button>
+            </form>
+        </div>
+
+        <p class="text-center text-secondary small mt-3">
+            No account? <a href="/signup" class="text-primary fw-semibold">Create one →</a>
+        </p>
+
     </div>
-  </div>
 </div>
+
 {% endblock %}

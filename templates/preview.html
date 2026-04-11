@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="col-md-6 col-lg-5 text-center">
+
+        <p class="qt-eyebrow text-secondary mb-4">Fundamental Analysis</p>
+
+        <div class="
+            rounded-circle border border-3 d-flex align-items-center justify-content-center mx-auto mb-4
+            {% if score >= 70 %}border-success{% elif score >= 50 %}border-warning{% else %}border-danger{% endif %}
+        " style="width: 160px; height: 160px;">
+            <span class="font-mono fw-bold fs-1
+                {% if score >= 70 %}text-success{% elif score >= 50 %}text-warning{% else %}text-danger{% endif %}
+            ">{{ score }}</span>
+        </div>
+
+        <h3 class="font-mono fw-bold mb-1">{{ ticker }}</h3>
+        <p class="text-secondary small mb-4">
+            {% if score >= 70 %}Strong fundamentals — good candidate
+            {% elif score >= 50 %}Moderate fundamentals — proceed with caution
+            {% else %}Weak fundamentals — high risk position{% endif %}
+        </p>
+
+        <div class="card bg-black border-secondary rounded-3 d-inline-flex flex-row gap-4 px-4 py-3 mb-4">
+            <div class="text-start">
+                <p class="qt-eyebrow text-secondary mb-1">Capital</p>
+                <p class="font-mono fw-bold mb-0">${{ "{:,.0f}".format(balance|float) }}</p>
+            </div>
+            <div class="border-start border-secondary ps-4 text-start">
+                <p class="qt-eyebrow text-secondary mb-1">Score</p>
+                <p class="font-mono fw-bold mb-0
+                    {% if score >= 70 %}text-success{% elif score >= 50 %}text-warning{% else %}text-danger{% endif %}
+                ">{{ score }} / 100</p>
+            </div>
+        </div>
+
+        {% if show %}
+        <div class="d-flex gap-3 justify-content-center">
+            <form method="POST" action="/confirm_portfolio">
+                <input type="hidden" name="ticker" value="{{ ticker }}">
+                <input type="hidden" name="balance" value="{{ balance }}">
+                <button class="btn btn-primary px-4">Confirm Investment →</button>
+            </form>
+            <a href="/" class="btn btn-outline-secondary px-4">Cancel</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card bg-black border-secondary p-4 mt-4">
+    <h5 class="fw-semibold mb-3">Overview</h5>
+    <p class="mb-1">{{ fundamentals.name }}</p>
+    <p class="text-secondary small">{{ fundamentals.sector }} · {{ fundamentals.industry }}</p>
+</div>
+
+<div class="card bg-black border-secondary p-4 mt-3">
+    <h5 class="fw-semibold mb-3">Profitability & Growth</h5>
+    <div class="row g-3">
+        <div class="col-6">
+            <p class="qt-eyebrow text-secondary">Revenue (Q)</p>
+            <p>${{ fundamentals.revenue_q | fmt }}</p>
+        </div>
+        <div class="col-6">
+            <p class="qt-eyebrow text-secondary">Net Income (Q)</p>
+            <p>${{ fundamentals.netIncome_q | fmt }}</p>
+        </div>
+        <div class="col-6">
+            <p class="qt-eyebrow text-secondary">Revenue Growth</p>
+            <p>{{ fundamentals.revenueGrowth | pct }}</p>
+        </div>
+        <div class="col-6">
+            <p class="qt-eyebrow text-secondary">Earnings Growth</p>
+            <p>{{ fundamentals.earningsGrowth | pct }}</p>
+        </div>
+        <div class="col-6">
+            <p class="qt-eyebrow text-secondary">Profit Margin</p>
+            <p>{{ fundamentals.profitMargins | pct }}</p>
+        </div>
+        <div class="col-6">
+            <p class="qt-eyebrow text-secondary">Operating Margin</p>
+            <p>{{ fundamentals.operatingMargins | pct }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="card bg-black border-secondary p-4 mt-3">
+    <h5 class="fw-semibold mb-3">Efficiency</h5>
+    <div class="row g-3">
+        <div class="col-6">
+            <p class="qt-eyebrow text-secondary">ROE</p>
+            <p>{{ fundamentals.roe | pct }}</p>
+        </div>
+        <div class="col-6">
+            <p class="qt-eyebrow text-secondary">ROA</p>
+            <p>{{ fundamentals.roa | pct }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="card bg-black border-secondary p-4 mt-3">
+    <h5 class="fw-semibold mb-3">Financial Health</h5>
+    <div class="row g-3">
+        <div class="col-6">
+            <p class="qt-eyebrow text-secondary">Cash</p>
+            <p>${{ fundamentals.cash | fmt }}</p>
+        </div>
+        <div class="col-6">
+            <p class="qt-eyebrow text-secondary">Debt</p>
+            <p>${{ fundamentals.debt | fmt }}</p>
+        </div>
+        <div class="col-6">
+            <p class="qt-eyebrow text-secondary">Current Ratio</p>
+            <p>{{ fundamentals.currentRatio }}</p>
+        </div>
+        <div class="col-6">
+            <p class="qt-eyebrow text-secondary">Quick Ratio</p>
+            <p>{{ fundamentals.quickRatio }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="card bg-black border-secondary p-4 mt-3">
+    <h5 class="fw-semibold mb-3">Valuation</h5>
+    <div class="row g-3">
+        <div class="col-6">
+            <p class="qt-eyebrow text-secondary">Market Cap</p>
+            <p>${{ fundamentals.marketCap | fmt }}</p>
+        </div>
+        <div class="col-6">
+            <p class="qt-eyebrow text-secondary">P/E</p>
+            <p>{{ fundamentals.peRatio }}</p>
+        </div>
+        <div class="col-6">
+            <p class="qt-eyebrow text-secondary">Forward P/E</p>
+            <p>{{ fundamentals.forwardPE }}</p>
+        </div>
+        <div class="col-6">
+            <p class="qt-eyebrow text-secondary">PEG</p>
+            <p>{{ fundamentals.pegRatio }}</p>
+        </div>
+    </div>
+</div>
+</div>
+
+{% endblock %}

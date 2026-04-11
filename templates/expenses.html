@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row g-5">
+
+    <!-- Add expense -->
+    <div class="col-lg-4">
+        <p class="qt-eyebrow text-secondary mb-1">Track Spending</p>
+        <h2 class="fw-semibold mb-4">Add Expense</h2>
+
+        {% if budget %}
+        <div class="card bg-black border-secondary p-3 mb-4">
+            <p class="qt-eyebrow text-secondary mb-1">{{ month }} Budget</p>
+            <div class="d-flex justify-content-between align-items-end mb-1">
+                <span class="font-mono fw-bold {% if spent > budget.limit_amount %}text-danger{% else %}text-success{% endif %}">
+                    ${{ "{:,.2f}".format(spent) }}
+                </span>
+                <span class="text-secondary small">/ ${{ "{:,.0f}".format(budget.limit_amount) }}</span>
+            </div>
+            {% set pct = [(spent / budget.limit_amount * 100), 100]|min %}
+            <div class="progress" style="height:6px;">
+                <div class="progress-bar {% if pct >= 90 %}bg-danger{% elif pct >= 70 %}bg-warning{% else %}bg-success{% endif %}"
+                     style="width:{{ pct }}%"></div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card bg-black border-secondary p-4 rounded-3">
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Category</label>
+                    <select name="category_id" class="form-select bg-dark text-light border-secondary">
+                        <option value="">— Uncategorised —</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Amount (USD)</label>
+                    <input type="number" name="amount" step="0.01" min="0.01"
+                           class="form-control bg-dark text-light border-secondary"
+                           placeholder="0.00" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Date</label>
+                    <input type="date" name="date"
+                           class="form-control bg-dark text-light border-secondary"
+                           value="{{ moment if moment else '' }}">
+                </div>
+                <div class="mb-4">
+                    <label class="form-label text-secondary small">Notes</label>
+                    <input type="text" name="notes"
+                           class="form-control bg-dark text-light border-secondary"
+                           placeholder="Optional description">
+                </div>
+                <button class="btn btn-primary w-100">Add Expense</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Expense list -->
+    <div class="col-lg-8">
+        <p class="qt-eyebrow text-secondary mb-1">History</p>
+        <h2 class="fw-semibold mb-4">Recent Expenses</h2>
+
+        {% if expenses %}
+        <table class="table table-dark table-hover align-middle">
+            <thead>
+                <tr class="text-secondary">
+                    <th class="qt-eyebrow fw-normal border-secondary">Date</th>
+                    <th class="qt-eyebrow fw-normal border-secondary">Category</th>
+                    <th class="qt-eyebrow fw-normal border-secondary">Notes</th>
+                    <th class="qt-eyebrow fw-normal border-secondary text-end">Amount</th>
+                    <th class="border-secondary"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in expenses %}
+                <tr class="border-secondary">
+                    <td class="text-secondary small">{{ e.date.strftime("%b %d, %Y") }}</td>
+                    <td>
+                        {% if e.category %}
+                        <span class="badge bg-secondary">{{ e.category.name }}</span>
+                        {% else %}
+                        <span class="text-secondary small">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-secondary small">{{ e.notes or "—" }}</td>
+                    <td class="font-mono text-end text-danger">-${{ "{:,.2f}".format(e.amount) }}</td>
+                    <td class="text-end">
+                        <form method="POST" action="/expenses/delete/{{ e.id }}">
+                            <button class="btn btn-sm btn-outline-danger py-0 px-2">×</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-secondary small mt-4">No expenses recorded yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

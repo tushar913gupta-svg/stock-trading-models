@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row g-5">
+
+    <!-- Add goal -->
+    <div class="col-lg-4">
+        <p class="qt-eyebrow text-secondary mb-1">Financial Targets</p>
+        <h2 class="fw-semibold mb-4">Add Goal</h2>
+
+        <div class="card bg-black border-secondary p-4 rounded-3">
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Goal Name</label>
+                    <input type="text" name="name"
+                           class="form-control bg-dark text-light border-secondary"
+                           placeholder="e.g. Emergency Fund" required>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label text-secondary small">Target Amount (USD)</label>
+                    <input type="number" name="amount" step="0.01" min="1"
+                           class="form-control bg-dark text-light border-secondary"
+                           placeholder="e.g. 10000" required>
+                </div>
+                <button class="btn btn-primary w-100">Add Goal</button>
+            </form>
+        </div>
+
+        <div class="card bg-black border-secondary p-3 mt-4">
+            <p class="qt-eyebrow text-secondary mb-1">Current Net Worth</p>
+            <h4 class="font-mono text-success mb-0">${{ "{:,.2f}".format(net_worth) }}</h4>
+        </div>
+    </div>
+
+    <!-- Goals list -->
+    <div class="col-lg-8">
+        <p class="qt-eyebrow text-secondary mb-1">Progress</p>
+        <h2 class="fw-semibold mb-4">Your Goals</h2>
+
+        {% if goals %}
+        <div class="d-flex flex-column gap-3">
+            {% for g in goals %}
+            {% set progress = [(net_worth / g.amount * 100), 100]|min %}
+            <div class="card bg-black border-secondary p-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1 me-3">
+                        <p class="fw-semibold mb-1">{{ g.name }}</p>
+                        <p class="font-mono text-primary mb-2">${{ "{:,.0f}".format(g.amount) }} target</p>
+                        <div class="progress mb-1" style="height:6px;">
+                            <div class="progress-bar bg-primary" style="width:{{ progress }}%"></div>
+                        </div>
+                        <p class="text-secondary small mb-0">
+                            {{ "{:.1f}".format(progress) }}% · Added {{ g.created_at.strftime("%b %d, %Y") }}
+                        </p>
+                    </div>
+                    <form method="POST" action="/goals/delete/{{ g.id }}">
+                        <button class="btn btn-sm btn-outline-danger py-0 px-2">×</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-secondary small mt-4">No goals yet — set your first financial target above.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

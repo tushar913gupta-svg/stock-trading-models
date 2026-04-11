@@ -1,12 +1,186 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card shadow">
-  <div class="card-body text-center">
-    <h4>{{ ticker }} Decision</h4>
-    <h2 class="my-3">{{ action }}</h2>
-    <p>Balance: {{ balance }}</p>
-    <p>Inventory Units: {{ units }}</p>
-    <a href="/" class="btn btn-secondary">Back</a>
-  </div>
+
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+        <p class="qt-eyebrow text-secondary mb-1">Trading Terminal</p>
+        <h2 class="font-mono fw-bold mb-0">
+            {{ ticker }}
+            <span class="badge ms-2 fs-6
+                {% if action == 'BUY' %}bg-success
+                {% elif action == 'SELL' %}bg-danger
+                {% else %}bg-warning text-dark{% endif %}
+            ">{{ action }}</span>
+        </h2>
+    </div>
+    <div class="d-flex gap-2">
+        <form method="POST" action="/execute_trade/{{ ticker }}">
+            <button class="btn btn-primary">Execute Trade</button>
+        </form>
+        <form method="POST" action="/sell_all/{{ ticker }}">
+            <button class="btn btn-outline-danger">Sell All & Close</button>
+        </form>
+    </div>
 </div>
+
+<div class="card bg-black border-secondary rounded-3 p-4 mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <p class="qt-eyebrow text-secondary mb-0">Price History · Last 100 Days</p>
+        <span id="latest-price" class="font-mono text-secondary small"></span>
+    </div>
+    <canvas id="chart" height="110"></canvas>
+</div>
+
+<div class="row g-0 border border-secondary rounded-3 overflow-hidden mb-4">
+    <div class="col-3 p-3 border-end border-secondary">
+        <p class="qt-eyebrow text-secondary mb-2">Signal</p>
+        <p class="font-mono fw-bold fs-5 mb-1
+            {% if action == 'BUY' %}text-success
+            {% elif action == 'SELL' %}text-danger
+            {% else %}text-warning{% endif %}
+        ">{{ action }}</p>
+        <p class="text-secondary small mb-0">
+            {% if action == 'BUY' %}Model recommends entry
+            {% elif action == 'SELL' %}Model recommends exit
+            {% else %}No clear signal{% endif %}
+        </p>
+    </div>
+    <div class="col-3 p-3 border-end border-secondary">
+        <p class="qt-eyebrow text-secondary mb-2">Cash Balance</p>
+        <p class="font-mono fw-bold fs-5 text-success mb-1">${{ "{:,.2f}".format(balance) }}</p>
+        <p class="text-secondary small mb-0">Available capital</p>
+    </div>
+    <div class="col-3 p-3 border-end border-secondary">
+        <p class="qt-eyebrow text-secondary mb-2">Units Held</p>
+        <p class="font-mono fw-bold fs-5 mb-1">{{ units }}</p>
+        <p class="text-secondary small mb-0">Open position</p>
+    </div>
+    <div class="col-3 p-3">
+        <p class="qt-eyebrow text-secondary mb-2">Position Value</p>
+        <p class="font-mono fw-bold fs-5 text-primary mb-1" id="pos-value">—</p>
+        <p class="text-secondary small mb-0">At last close price</p>
+    </div>
+</div>
+
+<div class="card bg-black border-secondary rounded-3 p-4 mb-4">
+    <p class="qt-eyebrow text-secondary mb-3">Model Confidence</p>
+    <div class="mb-2">
+        <div class="d-flex justify-content-between mb-1">
+            <span class="small text-success">BUY</span>
+            <span class="font-mono small text-success">{{ probs.buy }}%</span>
+        </div>
+        <div class="progress" style="height:6px;">
+            <div class="progress-bar bg-success" style="width:{{ probs.buy }}%"></div>
+        </div>
+    </div>
+    <div class="mb-2">
+        <div class="d-flex justify-content-between mb-1">
+            <span class="small text-danger">SELL</span>
+            <span class="font-mono small text-danger">{{ probs.sell }}%</span>
+        </div>
+        <div class="progress" style="height:6px;">
+            <div class="progress-bar bg-danger" style="width:{{ probs.sell }}%"></div>
+        </div>
+    </div>
+    <div>
+        <div class="d-flex justify-content-between mb-1">
+            <span class="small text-warning">HOLD</span>
+            <span class="font-mono small text-warning">{{ probs.hold }}%</span>
+        </div>
+        <div class="progress" style="height:6px;">
+            <div class="progress-bar bg-warning" style="width:{{ probs.hold }}%"></div>
+        </div>
+    </div>
+</div>
+
+{% if pred_history %}
+<div class="card bg-black border-secondary rounded-3 p-4">
+    <p class="qt-eyebrow text-secondary mb-3">Prediction History</p>
+    <table class="table table-dark table-sm align-middle">
+        <thead>
+            <tr class="text-secondary">
+                <th class="qt-eyebrow fw-normal border-secondary">Time</th>
+                <th class="qt-eyebrow fw-normal border-secondary">Action</th>
+                <th class="qt-eyebrow fw-normal border-secondary">Buy%</th>
+                <th class="qt-eyebrow fw-normal border-secondary">Sell%</th>
+                <th class="qt-eyebrow fw-normal border-secondary">Hold%</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in pred_history %}
+            {% set logits = [p.logit_hold, p.logit_buy, p.logit_sell] %}
+            {% set max_l = logits | max %}
+            {% set e0 = 2.71828 ** (logits[0] - max_l) %}
+            {% set e1 = 2.71828 ** (logits[1] - max_l) %}
+            {% set e2 = 2.71828 ** (logits[2] - max_l) %}
+            {% set total = e0 + e1 + e2 %}
+            <tr class="border-secondary">
+                <td class="text-secondary small">{{ p.timestamp.strftime("%b %d %H:%M") }}</td>
+                <td>
+                    <span class="badge {% if p.action == 'BUY' %}bg-success{% elif p.action == 'SELL' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                        {{ p.action }}
+                    </span>
+                </td>
+                <td class="font-mono small text-success">{{ "{:.1f}".format(e1 / total * 100) }}%</td>
+                <td class="font-mono small text-danger">{{ "{:.1f}".format(e2 / total * 100) }}%</td>
+                <td class="font-mono small text-warning">{{ "{:.1f}".format(e0 / total * 100) }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<script>
+const labels = {{ labels|safe }};
+const prices = {{ prices|safe }};
+const units = {{ units }};
+const lastPrice = prices[prices.length - 1];
+
+document.getElementById('latest-price').textContent = '$' + lastPrice.toFixed(2);
+document.getElementById('pos-value').textContent = '$' + (lastPrice * units).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const isUp = lastPrice >= prices[0];
+const lineColor = isUp ? 'var(--bs-success)' : 'var(--bs-danger)';
+const ctx = document.getElementById('chart').getContext('2d');
+const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+gradient.addColorStop(0, isUp ? 'rgba(25,135,84,0.2)' : 'rgba(220,53,69,0.2)');
+gradient.addColorStop(1, 'rgba(0,0,0,0)');
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels,
+        datasets: [{
+            data: prices,
+            borderColor: lineColor,
+            borderWidth: 1.5,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            tension: 0.3,
+            fill: true,
+            backgroundColor: gradient
+        }]
+    },
+    options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: '#1a1d23',
+                titleColor: '#6c757d',
+                bodyColor: '#e8eaf0',
+                padding: 10,
+                callbacks: { label: c => ' $' + c.parsed.y.toFixed(2) }
+            }
+        },
+        scales: {
+            x: { ticks: { color: '#6c757d', maxTicksLimit: 8, maxRotation: 0 }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { color: '#2a2d35' } },
+            y: { position: 'right', ticks: { color: '#6c757d', callback: v => '$' + v.toLocaleString() }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { color: '#2a2d35' } }
+        }
+    }
+});
+</script>
+
 {% endblock %}

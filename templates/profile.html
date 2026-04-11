@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex align-items-center gap-3 mb-2">
+    <div>
+        <p class="qt-eyebrow text-secondary mb-0">Account Overview</p>
+        <h5 class="fw-semibold mb-0">{{ current_user.username }}</h5>
+        <p class="text-secondary small mb-0">{{ current_user.email }}</p>
+    </div>
+</div>
+
+<h1 class="font-mono fw-bold text-success display-5 mt-3 mb-1">${{ "{:,.2f}".format(net_worth) }}</h1>
+<p class="text-secondary small mb-5">Total Net Worth · Member since {{ current_user.created_at.strftime("%B %Y") }}</p>
+
+<hr class="border-secondary">
+
+<!-- Portfolios -->
+<p class="qt-eyebrow text-secondary mb-1 mt-4">Manage Positions</p>
+<h2 class="fw-semibold mb-4">Portfolios</h2>
+
+{% if portfolios %}
+<table class="table table-dark table-hover align-middle mb-5">
+    <thead>
+        <tr class="text-secondary">
+            <th class="qt-eyebrow fw-normal border-secondary">Name</th>
+            <th class="qt-eyebrow fw-normal border-secondary">Type</th>
+            <th class="qt-eyebrow fw-normal border-secondary">Cash Balance</th>
+            <th class="qt-eyebrow fw-normal border-secondary">Adjust Capital</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in portfolios %}
+        <tr class="border-secondary">
+            <td class="font-mono fw-bold">{{ p.name }}</td>
+            <td><span class="badge bg-secondary">{{ p.type or "equity" }}</span></td>
+            <td class="font-mono text-success">${{ "{:,.2f}".format(p.balance) }}</td>
+            <td>
+                <form method="POST" action="/update_balance/{{ p.id }}" class="d-flex gap-2 align-items-center">
+                    <input type="number" step="0.01" name="amount"
+                           class="form-control form-control-sm bg-dark text-light border-secondary"
+                           placeholder="Amount" style="width:130px;" required>
+                    <button name="action" value="add"      class="btn btn-success btn-sm">Add</button>
+                    <button name="action" value="withdraw" class="btn btn-warning btn-sm">Withdraw</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-secondary small mb-5">No portfolios found.</p>
+{% endif %}
+
+<!-- Goals -->
+<hr class="border-secondary">
+<p class="qt-eyebrow text-secondary mb-1 mt-4">Financial Targets</p>
+<h2 class="fw-semibold mb-4">Goals</h2>
+
+{% if goals %}
+<div class="row g-3">
+    {% for g in goals %}
+    <div class="col-md-4">
+        <div class="card bg-black border-secondary p-3">
+            <p class="fw-semibold mb-1">{{ g.name }}</p>
+            <h5 class="font-mono text-primary mb-0">${{ "{:,.0f}".format(g.amount) }}</h5>
+            <p class="text-secondary small mb-0">Target</p>
+            {% set progress = [(net_worth / g.amount * 100), 100]|min %}
+            <div class="progress mt-2" style="height:4px;">
+                <div class="progress-bar bg-primary" style="width:{{ progress }}%"></div>
+            </div>
+            <p class="text-secondary small mt-1">{{ "{:.0f}".format(progress) }}% of goal</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-secondary small"><a href="/goals" class="text-primary">Add your first goal →</a></p>
+{% endif %}
+
+{% endblock %}

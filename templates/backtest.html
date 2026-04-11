@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="mb-4">Model Backtest</h2>
+
+<div class="card bg-black border-secondary p-4 mb-4">
+    <form method="POST">
+        <div class="row g-3">
+
+            <div class="col-md-3">
+                <input type="text" name="ticker" class="form-control bg-dark text-light border-secondary" placeholder="Ticker" required>
+            </div>
+
+            <div class="col-md-3">
+                <input type="date" name="start" class="form-control bg-dark text-light border-secondary" required>
+            </div>
+
+            <div class="col-md-3">
+                <input type="date" name="end" class="form-control bg-dark text-light border-secondary" required>
+            </div>
+
+            <div class="col-md-2">
+                <input type="text" name="balance" class="form-control bg-dark text-light border-secondary" placeholder="Balance" required>
+            </div>
+
+            <div class="col-md-1">
+                <button class="btn btn-primary w-100">Run</button>
+            </div>
+
+        </div>
+    </form>
+</div>
+
+{% if results %}
+<div class="card bg-black border-secondary p-4 mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="fw-semibold mb-0">Backtest Results</h5>
+        <span class="text-secondary small">{{ results.labels[0] }} → {{ results.labels[-1] }}</span>
+    </div>
+
+    <div class="row text-center mb-4">
+
+        <div class="col-md-3">
+            <p class="text-secondary small mb-1">Profit</p>
+            <h5 class="{{ 'text-success' if results.profit >= 0 else 'text-danger' }}">
+                ${{ results.profit }}
+            </h5>
+        </div>
+
+        <div class="col-md-3">
+            <p class="text-secondary small mb-1">Final Balance</p>
+            <h5>${{ results.balance }}</h5>
+        </div>
+
+        <div class="col-md-2">
+            <p class="text-secondary small mb-1">Buys</p>
+            <h6 class="text-success">{{ results.buys }}</h6>
+        </div>
+
+        <div class="col-md-2">
+            <p class="text-secondary small mb-1">Sells</p>
+            <h6 class="text-danger">{{ results.sells }}</h6>
+        </div>
+
+        <div class="col-md-2">
+            <p class="text-secondary small mb-1">Holds</p>
+            <h6>{{ results.holds }}</h6>
+        </div>
+
+    </div>
+
+    <div style="height: 400px;">
+        <canvas id="chart"></canvas>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const labels = {{ results.labels | tojson }};
+const prices = {{ results.prices | tojson }};
+const buys = {{ results.buy_points | tojson }};
+const sells = {{ results.sell_points | tojson }};
+
+new Chart(document.getElementById('chart'), {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [
+            {
+                label: 'Price',
+                data: prices,
+                borderColor: '#4cc9f0',
+                borderWidth: 2,
+                tension: 0.2,
+                pointRadius: 0
+            },
+            {
+                label: 'Buy',
+                data: buys,
+                backgroundColor: '#2ecc71',
+                borderColor: '#2ecc71',
+                pointRadius: 5,
+                showLine: false
+            },
+            {
+                label: 'Sell',
+                data: sells,
+                backgroundColor: '#e74c3c',
+                borderColor: '#e74c3c',
+                pointRadius: 5,
+                showLine: false
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: {
+                    color: '#ccc'
+                }
+            }
+        },
+        scales: {
+            x: {
+                ticks: { color: '#aaa' },
+                grid: { color: '#222' }
+            },
+            y: {
+                ticks: { color: '#aaa' },
+                grid: { color: '#222' }
+            }
+        }
+    }
+});
+</script>
+{% endif %}
+
+{% endblock %}
