@@ -6,7 +6,7 @@ def norm(ticker):
     df.to_csv(f'./Stock Data/{ticker}.csv')
 
 def test(ticker):
-    df = yf.download(f'{ticker}', start='2025-01-01', end='2025-12-10')
+    df = yf.download(f'{ticker}', start='2025-01-01', end='2026-01-01')
     df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
     df.to_csv(f'./Stock Data/{ticker}TEST.csv')
 
